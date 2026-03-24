@@ -26,7 +26,7 @@ if "logged_in" not in st.session_state:
 # 3. API Sozlash (404 xatosini bartaraf etish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni barqaror usulda chaqirish (v1beta siz)
+    # Modelni barqaror usulda chaqirish
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
@@ -71,7 +71,7 @@ with tab1:
                         if uploaded_file.type == "application/pdf":
                             pdf_reader = PdfReader(uploaded_file)
                             text = "".join([page.extract_text() for page in pdf_reader.pages])
-                            content.append(f"Hujjat matni: {text[:4000]}") # PDF matni qo'shildi
+                            content.append(f"Hujjat matni: {text[:4000]}")
                         else:
                             content.append(Image.open(uploaded_file))
 
