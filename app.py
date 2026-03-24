@@ -23,16 +23,17 @@ if "logged_in" not in st.session_state:
                 st.error("Login yoki parol xato!")
     st.stop()
 
-# 3. API Sozlash (404 xatosini yo'qotish uchun)
+# 3. API Sozlash (TUZATILGAN)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni barqaror usulda chaqirish
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # ✅ TO'G'RI MODEL
+    model = genai.GenerativeModel("gemini-1.5-flash-latest")
 else:
     st.error("API kalit topilmadi!")
     st.stop()
 
-# 4. Mahallalar ro'yxati (Jami 59 ta)
+# 4. Mahallalar ro'yxati
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -50,12 +51,15 @@ st.title("🏛 Mahijro AI: Zangiota tumani")
 
 tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
 
+# ================= TAB 1 =================
 with tab1:
     st.subheader("Murojaatga javob tayyorlash")
     colA, colB = st.columns([1, 1])
+    
     with colA:
         uploaded_file = st.file_uploader("Murojaatni yuklang (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'])
         selected_mfy = st.selectbox("Qaysi mahalla mas'uli tayyorlaydi?", malla_nomlari)
+    
     with colB:
         muro_izoh = st.text_area("Qo'shimcha izoh yoki topshiriqni yozing:", height=100)
     
@@ -63,34 +67,47 @@ with tab1:
         if uploaded_file or muro_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    content = [f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."]
-                    if muro_izoh: content.append(f"Topshiriq: {muro_izoh}")
+                    content = [
+                        f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy, aniq va tartibli javob xati yozing."
+                    ]
+
+                    if muro_izoh:
+                        content.append(f"Topshiriq: {muro_izoh}")
                     
                     if uploaded_file:
                         if uploaded_file.type == "application/pdf":
                             pdf_reader = PdfReader(uploaded_file)
-                            text = "".join([page.extract_text() for page in pdf_reader.pages])
+                            text = ""
+                            for page in pdf_reader.pages:
+                                t = page.extract_text()
+                                if t:
+                                    text += t
                             content.append(f"Hujjat matni: {text[:4000]}")
                         else:
-                            content.append(Image.open(uploaded_file))
+                            image = Image.open(uploaded_file)
+                            content.append(image)
 
                     response = model.generate_content(content)
-                    st.success("Tayyorlangan javob:")
+
+                    st.success("✅ Tayyorlangan javob:")
                     st.write(response.text)
+
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugagan bo'lishi mumkin. 1 daqiqa kutib qayta urining.")
+                        st.error("⚠️ Limit tugagan. Bir oz kutib qayta urinib ko‘ring.")
                     else:
-                        st.error(f"Xatolik: {e}")
+                        st.error(f"❌ Xatolik: {e}")
         else:
             st.warning("Fayl yuklang yoki matn kiriting.")
 
+# ================= TAB 2 =================
 with tab2:
     st.subheader("Mahallalar monitoringi")
-    # Ro'yxat uzunligini avtomatik tenglashtirish (ValueError oldini oladi)
+
     df = pd.DataFrame({
         "№": range(1, len(malla_nomlari) + 1),
         "MFY nomi": malla_nomlari,
         "Holat": ["Yangi"] * len(malla_nomlari)
     })
+
     st.dataframe(df, use_container_width=True, hide_index=True)
