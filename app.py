@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 from PIL import Image
 from PyPDF2 import PdfReader
 import pandas as pd
@@ -7,11 +7,11 @@ import pandas as pd
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛")
 st.title("🏛 Mahijro AI")
 
-# Secrets-дан калитни олиш
+# Secrets-dan kalitni olish
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("API калит топилмади! Secrets бўлимини текширинг.")
+    st.error("API kalit topilmadi! Secrets bo'limini tekshiring.")
     st.stop()
 
 tab1, tab2, tab3 = st.tabs(["✍️ Мурожаат юклаш", "📊 Маҳаллалар ҳисоботи", "🔄 Қайта мурожаатлар"])
@@ -23,36 +23,34 @@ with tab1:
     
     if st.button("Жавоб хати тайёрлаш"):
         if uploaded_file or murojaat_izoh:
-            try:
-                # Энг барқарор моделни чақириш усули
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                content_parts = []
-                
-                # Кўрсатма қўшиш
-                prompt = "Сен давлат идораси ходимисан. Қуйидаги мурожаатга Ўзбекистон қонунчилиги асосида расмий жавоб хати лойиҳасини ўзбек тилида тайёрла."
-                content_parts.append(prompt)
-                
-                if murojaat_izoh:
-                    content_parts.append(f"Изоҳ: {murojaat_izoh}")
-                
-                if uploaded_file:
-                    if uploaded_file.type == "application/pdf":
-                        reader = PdfReader(uploaded_file)
-                        pdf_text = ""
-                        for page in reader.pages:
-                            pdf_text += page.extract_text()
-                        content_parts.append(f"PDF матни: {pdf_text}")
-                    else:
-                        img = Image.open(uploaded_file)
-                        content_parts.append(img)
+            with st.spinner("AI таҳлил қилмоқда..."):
+                try:
+                    content_list = []
+                    prompt = "Сиз давлат идораси ходимисиз. Қуйидаги мурожаатни ўрганиб чиқиб, расмий ва қонуний жавоб хати лойиҳасини ўзбек тилида тайёрлаб беринг:"
+                    content_list.append(prompt)
+                    
+                    if murojaat_izoh:
+                        content_list.append(f"\nҚўшимча изоҳ: {murojaat_izoh}")
+                    
+                    if uploaded_file:
+                        if uploaded_file.type == "application/pdf":
+                            reader = PdfReader(uploaded_file)
+                            pdf_text = "".join([page.extract_text() for page in reader.pages])
+                            content_list.append(f"\nPDF матни: {pdf_text}")
+                        else:
+                            img = Image.open(uploaded_file)
+                            content_list.append(img)
 
-                with st.spinner("AI таҳлил қилмоқда..."):
-                    # Мана шу ерда форматни тўғирладик
-                    response = model.generate_content(content_parts)
+                    # Yangi kutubxona bo'yicha chaqirish
+                    response = client.models.generate_content(
+                        model="gemini-2.0-flash",
+                        contents=content_list
+                    )
+                    
                     st.success("Тайёрланган жавоб:")
                     st.write(response.text)
-            except Exception as e:
-                st.error(f"Хатолик юз берди: {str(e)}")
+                except Exception as e:
+                    st.error(f"Хатолик юз берди: {str(e)}")
         else:
             st.warning("Файл юкланг ёки матн киритинг.")
 
