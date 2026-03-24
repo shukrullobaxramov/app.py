@@ -23,17 +23,15 @@ if "logged_in" not in st.session_state:
                 st.error("Login yoki parol xato!")
     st.stop()
 
-# 3. API Sozlash
+# 3. API Sozlash (404 xatosini oldini olish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    model = genai.GenerativeModel('gemini-1.5-flash')
 else:
-    st.error("API kalit topilmadi! Secrets bo'limini tekshiring.")
+    st.error("API kalit topilmadi!")
     st.stop()
 
-# 404 xatosini oldini olish uchun modelni to'g'ri chaqirish
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-# 4. MFY ro'yxati (ALIFBO TARTIBIDA)
+# 4. MFY ro'yxati (ALIFBO TARTIBIDA - Jami 59 ta)
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -76,7 +74,7 @@ with tab1:
                             pdf_text = ""
                             for page in pdf_reader.pages:
                                 pdf_text += page.extract_text()
-                            content.append(f"Hujjat matni: {pdf_text[:5000]}")
+                            content.append(f"Hujjat matni: {pdf_text[:4000]}")
                         else:
                             content.append(Image.open(uploaded_file))
 
@@ -85,13 +83,18 @@ with tab1:
                     st.write(response.text)
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugadi. 1 daqiqa kutib qayta urinib ko'ring.")
+                        st.error("Limit tugadi. 1 daqiqa кутиб қайта урининг.")
                     else:
-                        st.error(f"Xatolik yuz berdi: {e}")
+                        st.error(f"Xatolik: {e}")
         else:
             st.warning("Fayl yuklang yoki matn kiriting.")
 
 with tab2:
     st.subheader("Mahallalar kesimida monitoring")
-    df = pd.DataFrame({"№": range(1, 61), "MFY nomi": malla_nomlari, "Holat": ["Yangi"]*60})
+    # Jadvallarni tenglashtirish (Jami 59 ta mahalla)
+    df = pd.DataFrame({
+        "№": range(1, len(malla_nomlari) + 1),
+        "MFY nomi": malla_nomlari,
+        "Holat": ["Yangi"] * len(malla_nomlari)
+    })
     st.dataframe(df, use_container_width=True, hide_index=True)
