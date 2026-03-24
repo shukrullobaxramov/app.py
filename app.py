@@ -26,13 +26,12 @@ if "logged_in" not in st.session_state:
 # API Sozlash (404 xatosini oldini olish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni v1beta siz, barqaror usulda chaqirish
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
     st.stop()
 
-# MFY ro'yxati (Alifbo bo'yicha - Jami 59 ta)
+# Alifbo bo'yicha mahallalar (Jami 59 ta)
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -60,12 +59,11 @@ with tab1:
         murojaat_izoh = st.text_area("Rezolyutsiya yoki qo'shimcha izoh:", height=100)
     
     if st.button("📝 Javob xati loyihasini yaratish", use_container_width=True):
-        if uploaded_file or murojaat_izoh:
+        if uploaded_file or muro_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
-                    content = [prompt]
-                    if murojaat_izoh: content.append(f"Izoh: {muro_izoh}")
+                    content = [f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."]
+                    if murojaat_izoh: content.append(f"Izoh: {murojaat_izoh}")
                     
                     if uploaded_file:
                         if uploaded_file.type == "application/pdf":
@@ -80,13 +78,17 @@ with tab1:
                     st.write(response.text)
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugagan бўлиши мумкин. 1 дақиқа кутиб қайта урининг.") #
+                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.")
                     else:
                         st.error(f"Xatolik: {e}")
         else:
             st.warning("Fayl yuklang yoki matn kiriting.")
 
 with tab2:
-    st.subheader("Mahallalar kesimida monitoring")
-    df = pd.DataFrame({"№": range(1, len(malla_nomlari)+1), "MFY nomi": malla_nomlari, "Holat": ["Yangi"]*len(malla_nomlari)})
+    st.subheader("Mahallalar monitoringi")
+    df = pd.DataFrame({
+        "№": range(1, len(malla_nomlari) + 1),
+        "MFY nomi": malla_nomlari,
+        "Holat": ["Yangi"] * len(malla_nomlari)
+    })
     st.dataframe(df, use_container_width=True, hide_index=True)
