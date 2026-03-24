@@ -1,64 +1,63 @@
 import streamlit as st
 from google import genai
+from PIL import Image
 import pandas as pd
 
-# Илованинг сарлавҳаси
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛")
 st.title("🏛 Mahijro AI")
-st.markdown("##### Давлат хизматчилари учун мурожаатларга тезкор ва қонуний жавоб тайёрлаш тизими")
+st.markdown("##### Мурожаатларга тезкор ва қонуний жавоб тайёрлаш тизими")
 
-# API калитни текшириш
 if "GEMINI_API_KEY" not in st.secrets:
     st.warning("Тизим созланмоқда. Илтимос, API калитни Secrets бўлимига киритинг.")
     st.stop()
 
 client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Кириш пароли
-CORRECT_PASSWORD = "123"
-
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    password = st.text_input("Кириш паролини ёзинг:", type="password")
-    if st.button("Тизимга кириш"):
-        if password == CORRECT_PASSWORD:
-            st.session_state["authenticated"] = True
-            st.rerun()
-        else:
-            st.error("Парол нотўғри!")
-    st.stop()
-
-# Асосий меню
-tab1, tab2, tab3 = st.tabs(["✍️ Жавоб ёзиш", "📊 Маҳаллалар ҳисоботи", "🔄 Қайта мурожаатлар"])
+# Табларни яратамиз
+tab1, tab2, tab3 = st.tabs(["✍️ Мурожаат юклаш", "📊 Маҳаллалар ҳисоботи", "🔄 Қайта мурожаатлар"])
 
 with tab1:
-    murojaat = st.text_area("Мурожаат матнини киритинг:", height=200)
+    st.subheader("Мурожаатни матн ёки файл кўринишида киритинг")
+    
+    # Файл юклаш қисми (Расм, PDF, DOCX)
+    uploaded_file = st.file_uploader("Мурожаат расми ёки ҳужжатини юкланг", type=['png', 'jpg', 'jpeg', 'pdf', 'docx'])
+    
+    murojaat_text = st.text_area("Ёки мурожаат матнини бу ерга ёзинг:", height=150)
+    
     if st.button("Жавоб хати тайёрлаш"):
-        if murojaat:
-            with st.spinner("AI таҳлил қилмоқда..."):
+        with st.spinner("AI таҳлил қилмоқда..."):
+            input_content = []
+            if murojaat_text:
+                input_content.append(murojaat_text)
+            
+            if uploaded_file:
+                if uploaded_file.type.startswith('image'):
+                    img = Image.open(uploaded_file)
+                    input_content.append(img)
+                else:
+                    input_content.append(f"Файл юкланди: {uploaded_file.name}. Илтимос, уни таҳлил қил.")
+
+            if input_content:
+                # AI жавоб бериши
                 response = client.models.generate_content(
                     model="gemini-2.0-flash",
-                    contents=f"Қуйидаги мурожаатга Ўзбекистон қонунчилиги асосида расмий жавоб хати ёзиб бер: {murojaat}"
+                    contents=["Сен давлат идораси ходимисан. Қуйидаги мурожаатни (матн ёки расм) Ўзбекистон қонунчилиги асосида ўрганиб чиқ ва расмий жавоб хати лойиҳасини ўзбек тилида тайёрлаб бер:"] + input_content
                 )
-                st.subheader("Тайёрланган жавоб:")
+                st.success("Тайёрланган жавоб:")
                 st.write(response.text)
-        else:
-            st.error("Илтимос, мурожаат матнини киритинг.")
+            else:
+                st.error("Илтимос, матн ёзинг ёки файл юкланг!")
 
 with tab2:
-    st.subheader("60 та маҳалла бўйича мурожаатлар статистикаси")
-    # Намунавий маълумотлар
-    data = {"Маҳалла": [f"Маҳалла {i}" for i in range(1, 61)], 
-            "Мурожаатлар сони": [0] * 60,
-            "Ижро этилган": [0] * 60}
-    df = pd.DataFrame(data)
+    st.subheader("60 та маҳалла бўйича таҳлил")
+    # Маҳаллалар рўйхати ва статистикаси
+    df = pd.DataFrame({
+        "Маҳалла номи": [f"Маҳалла {i}" for i in range(1, 61)],
+        "Келиб тушган": [0] * 60,
+        "Жавоб берилган": [0] * 60
+    })
     st.dataframe(df, use_container_width=True)
 
 with tab3:
-    st.subheader("🔄 Қайта келган мурожаатлар назорати")
-    st.info("Бу ерда қайта келган мурожаатлар автоматик таҳлил қилинади.")
-
-st.sidebar.markdown("---")
-st.sidebar.write("© 2026 Mahijro AI")
+    st.subheader("🔄 Қайта мурожаатлар назорати")
+    st.info("Бу бўлимда тизим мурожаатчининг исми ва мавзуси бўйича қайта келган хатларни аниқлайди.")
