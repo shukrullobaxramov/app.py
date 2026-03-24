@@ -1,4 +1,4 @@
-google-genai
+google-generativeai
 streamlit
-pillow
-pypdf2
+Pillow
+PyPDF2
