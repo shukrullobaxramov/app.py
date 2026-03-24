@@ -2,54 +2,35 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+from PyPDF2 import PdfReader
 import pandas as pd
 
-# 1. Sahifa sozlamalari
+# Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛", layout="wide")
 
-# 2. Login tizimi
-def login():
-    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Tizimga kirish</h2>", unsafe_allow_html=True)
-    users = {
-        "admin": "zangiota2026",
-        "shukrullo": "zangiota_777"
-    }
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        username = st.text_input("Loginingizni kiriting:")
-        password = st.text_input("Maxfiy parolni kiriting:", type="password")
-        if st.button("Kirish", use_container_width=True):
-            if username in users and users[username] == password:
-                st.session_state["logged_in"] = True
-                st.session_state["user_name"] = username
-                st.rerun()
-            else:
-                st.error("Login yoki parol xato!")
-
+# Login tizimi
 if "logged_in" not in st.session_state:
-    login()
+    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Kirish</h2>", unsafe_allow_html=True)
+    u = st.text_input("Login:")
+    p = st.text_input("Parol:", type="password")
+    if st.button("Kirish", use_container_width=True):
+        if u == "admin" and p == "zangiota2026":
+            st.session_state["logged_in"] = True
+            st.rerun()
+        else: st.error("Xato!")
     st.stop()
 
-# 3. Sidebar
-with st.sidebar:
-    st.markdown(f"### 👤 {st.session_state['user_name'].upper()}")
-    if st.button("🚪 Tizimdan chiqish"):
-        del st.session_state["logged_in"]
-        st.rerun()
-    st.markdown("---")
-    st.info("Zangiota tumani Mahalla uyushmasi")
-
-# 4. API sozlamalari
+# API sozlash
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
     st.error("API kalit topilmadi!")
     st.stop()
 
+# 404 xatosini oldini olish uchun modelni to'g'ri chaqirish
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 5. MFY ro'yxati (ALIFBO TARTIBIDA)
+# Alifbo bo'yicha mahallalar
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -63,41 +44,31 @@ malla_nomlari = [
     "Tokzor", "To'qimachi", "Turopobod", "Turkiston", "Xo'jamazor", "Yangi bo'suz"
 ]
 
-# 6. Asosiy interfeys
 st.title("🏛 Mahijro AI: Ishchi paneli")
+uploaded_file = st.file_uploader("Murojaatni yuklang (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'])
+selected_mfy = st.selectbox("Mahallani tanlang:", malla_nomlari)
+murojaat_izoh = st.text_area("Rezolyutsiya:")
 
-tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
-
-with tab1:
-    st.subheader("Murojaatga javob tayyorlash")
-    colA, colB = st.columns([1, 1])
-    with colA:
-        uploaded_file = st.file_uploader("Murojaatni yuklang (Rasm)", type=['png', 'jpg', 'jpeg'])
-        selected_mfy = st.selectbox("Mahallani tanlang:", malla_nomlari)
-    with colB:
-        murojaat_izoh = st.text_area("Rezolyutsiya yoki qo'shimcha izoh:", height=100)
-    
-    if st.button("📝 Javob xati loyihasini yaratish", use_container_width=True):
-        if uploaded_file or murojaat_izoh:
-            with st.spinner("AI tahlil qilmoqda..."):
-                try:
-                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati tayyorlang."
-                    content = [prompt]
-                    if murojaat_izoh: content.append(f"Izoh: {murojaat_izoh}")
-                    if uploaded_file: content.append(Image.open(uploaded_file))
-
-                    response = model.generate_content(content)
-                    st.success("Tayyorlangan javob:")
-                    st.write(response.text)
-                except Exception as e:
-                    if "429" in str(e):
-                        st.error("Limit tugadi. 1 daqiqa kutib qayta urinib ko'ring.")
+if st.button("📝 Javob xati loyihasini yaratish"):
+    if uploaded_file or murojaat_izoh:
+        with st.spinner("Tahlil qilinmoqda..."):
+            try:
+                content = [f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob yozing:"]
+                if murojaat_izoh: content.append(murojaat_izoh)
+                
+                if uploaded_file:
+                    if uploaded_file.type == "application/pdf":
+                        pdf = PdfReader(uploaded_file)
+                        matn = ""
+                        for page in pdf.pages:
+                            matn += page.extract_text()
+                        content.append(f"PDF matni: {matn[:5000]}") # PDF matnini qo'shish
                     else:
-                        st.error(f"Xatolik: {e}")
-        else:
-            st.warning("Fayl yuklang yoki matn kiriting.")
+                        content.append(Image.open(uploaded_file))
 
-with tab2:
-    st.subheader("Mahallalar kesimida monitoring")
-    df_mfy = pd.DataFrame({"№": range(1, 60), "MFY nomi": malla_nomlari, "Holat": ["Yangi"]*59})
-    st.dataframe(df_mfy, use_container_width=True, hide_index=True)
+                response = model.generate_content(content)
+                st.success("Javob тайёр:")
+                st.write(response.text)
+            except Exception as e:
+                if "429" in str(e): st.error("Limit tugadi. 1 daqiqa kuting.")
+                else: st.error(f"Xatolik: {e}")
