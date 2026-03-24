@@ -10,7 +10,7 @@ st.set_page_config(page_title="Mahijro AI", page_icon="🏛", layout="wide")
 
 # 2. Login tizimi
 if "logged_in" not in st.session_state:
-    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Tizimga kirish</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Kirish</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         u = st.text_input("Login:")
@@ -23,16 +23,16 @@ if "logged_in" not in st.session_state:
                 st.error("Login yoki parol xato!")
     st.stop()
 
-# 3. API Sozlash (404 xatosini bartaraf etish uchun)
+# 3. API Sozlash (404 xatosini yo'qotish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni barqaror usulda chaqirish
+    # Modelni barqaror (stable) usulda chaqirish
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
     st.stop()
 
-# 4. MFY ro'yxati (Alifbo bo'yicha - Jami 59 ta)
+# 4. Mahallalar ro'yxati (Jami 59 ta)
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -46,6 +46,7 @@ malla_nomlari = [
     "Tokzor", "To'qimachi", "Turopobod", "Turkiston", "Xo'jamazor", "Yangi bo'suz"
 ]
 
+# 5. Asosiy interfeys
 st.title("🏛 Mahijro AI: Zangiota tumani")
 
 tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
@@ -55,9 +56,9 @@ with tab1:
     colA, colB = st.columns([1, 1])
     with colA:
         uploaded_file = st.file_uploader("Murojaatni yuklang (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'])
-        selected_mfy = st.selectbox("Mahallani tanlang:", malla_nomlari)
+        selected_mfy = st.selectbox("Qaysi mahalla mas'uli tayyorlaydi?", malla_nomlari)
     with colB:
-        muro_izoh = st.text_area("Rezolyutsiya yoki izoh:", height=100)
+        muro_izoh = st.text_area("Qo'shimcha izoh yoki topshiriqni yozing:", height=100)
     
     if st.button("📝 Javob xati loyihasini yaratish", use_container_width=True):
         if uploaded_file or muro_izoh:
@@ -65,12 +66,14 @@ with tab1:
                 try:
                     prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
                     content = [prompt]
-                    if muro_izoh: content.append(f"Izoh: {muro_izoh}")
+                    if muro_izoh: content.append(f"Topshiriq: {muro_izoh}")
                     
                     if uploaded_file:
                         if uploaded_file.type == "application/pdf":
                             pdf_reader = PdfReader(uploaded_file)
-                            text = "".join([page.extract_text() for page in pdf_reader.pages])
+                            text = ""
+                            for page in pdf_reader.pages:
+                                text += page.extract_text()
                             content.append(f"Hujjat matni: {text[:4000]}")
                         else:
                             content.append(Image.open(uploaded_file))
@@ -80,7 +83,7 @@ with tab1:
                     st.write(response.text)
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.")
+                        st.error("Limit tugagan bo'lishi mumkin. 1 daqiqa kutib qayta urining.")
                     else:
                         st.error(f"Xatolik: {e}")
         else:
@@ -88,10 +91,11 @@ with tab1:
 
 with tab2:
     st.subheader("Mahallalar monitoringi")
-    # Ro'yxat uzunligini avtomatik tenglashtirish
+    # ValueError'ni oldini olish uchun (Jami 59 ta)
     df = pd.DataFrame({
         "№": range(1, len(malla_nomlari) + 1),
         "MFY nomi": malla_nomlari,
         "Holat": ["Yangi"] * len(malla_nomlari)
     })
     st.dataframe(df, use_container_width=True, hide_index=True)
+    
