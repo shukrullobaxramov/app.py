@@ -10,7 +10,7 @@ st.set_page_config(page_title="Mahijro AI", page_icon="🏛", layout="wide")
 
 # 2. Login tizimi
 if "logged_in" not in st.session_state:
-    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Kirish</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Tizimga kirish</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         u = st.text_input("Login:")
@@ -26,7 +26,7 @@ if "logged_in" not in st.session_state:
 # 3. API Sozlash (404 xatosini yo'qotish uchun TUZATILGAN)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # ✅ MUHIM: v1beta ishlatilmaydi, bu 404 xatosini to'g'irlaydi
+    # MUHIM: v1beta ishlatilmaydi, bu ulanish xatosini to'g'irlaydi
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
@@ -50,21 +50,21 @@ st.title("🏛 Mahijro AI: Zangiota tumani")
 
 tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
 
-# ================= TAB 1 =================
+# ================= TAB 1: MUROJAATLAR =================
 with tab1:
     st.subheader("Murojaatga javob tayyorlash")
     colA, colB = st.columns([1, 1])
     with colA:
         uploaded_file = st.file_uploader("Murojaatni yuklang (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'])
-        selected_mfy = st.selectbox("Qaysi mahalla mas'uli tayyorlaydi?", malla_nomlari)
+        selected_mfy = st.selectbox("Mas'ul mahallani tanlang:", malla_nomlari)
     with colB:
-        muro_izoh = st.text_area("Qo'shimcha izoh yoki topshiriqni yozing:", height=100)
+        muro_izoh = st.text_area("Rezolyutsiya yoki qo'shimcha topshiriq:", height=100)
     
     if st.button("📝 Javob xati loyihasini yaratish", use_container_width=True):
         if uploaded_file or muro_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
+                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy va tartibli javob xati loyihasini tayyorlang."
                     content = [prompt]
                     if muro_izoh: content.append(f"Topshiriq: {muro_izoh}")
                     
@@ -78,16 +78,16 @@ with tab1:
 
                     response = model.generate_content(content)
                     st.success("✅ Tayyorlangan javob:")
-                    st.write(response.text)
+                    st.markdown(response.text)
                 except Exception as e:
-                    st.error(f"Xatolik: {e}")
+                    st.error(f"Xatolik yuz berdi: {e}")
         else:
-            st.warning("Fayl yuklang yoki matn kiriting.")
+            st.warning("Iltimos, fayl yuklang yoki matn kiriting.")
 
-# ================= TAB 2 =================
+# ================= TAB 2: MONITORING =================
 with tab2:
     st.subheader("Mahallalar monitoringi")
-    # ✅ ValueError TUZATILGAN: len() yordamida avtomatik tenglashtirish
+    # ValueError TUZATILGAN: len() yordamida avtomatik tenglashtirish
     df = pd.DataFrame({
         "№": range(1, len(malla_nomlari) + 1),
         "MFY nomi": malla_nomlari,
