@@ -2,6 +2,7 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import pandas as pd
 
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛", layout="wide")
@@ -30,7 +31,7 @@ if "logged_in" not in st.session_state:
     login()
     st.stop()
 
-# 3. Sidebar (Yon menyu)
+# 3. Sidebar
 with st.sidebar:
     st.markdown(f"### 👤 {st.session_state['user_name'].upper()}")
     if st.button("🚪 Tizimdan chiqish"):
@@ -43,7 +44,7 @@ with st.sidebar:
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("API kalit topilmadi! Secrets bo'limini tekshiring.")
+    st.error("API kalit topilmadi!")
     st.stop()
 
 model = genai.GenerativeModel('gemini-1.5-flash')
@@ -80,7 +81,7 @@ with tab1:
         if uploaded_file or murojaat_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
+                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati tayyorlang."
                     content = [prompt]
                     if murojaat_izoh: content.append(f"Izoh: {murojaat_izoh}")
                     if uploaded_file: content.append(Image.open(uploaded_file))
@@ -89,8 +90,14 @@ with tab1:
                     st.success("Tayyorlangan javob:")
                     st.write(response.text)
                 except Exception as e:
-                    st.error("Hozir band. 1 daqiqa kutib qayta urinib ko'ring (Limit tugagan).")
+                    if "429" in str(e):
+                        st.error("Limit tugadi. 1 daqiqa kutib qayta urinib ko'ring.")
+                    else:
+                        st.error(f"Xatolik: {e}")
         else:
             st.warning("Fayl yuklang yoki matn kiriting.")
 
 with tab2:
+    st.subheader("Mahallalar kesimida monitoring")
+    df_mfy = pd.DataFrame({"№": range(1, 60), "MFY nomi": malla_nomlari, "Holat": ["Yangi"]*59})
+    st.dataframe(df_mfy, use_container_width=True, hide_index=True)
