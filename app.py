@@ -26,7 +26,7 @@ if "logged_in" not in st.session_state:
 # 3. API Sozlash (404 xatosini yo'qotish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni barqaror (stable) usulda chaqirish
+    # Modelni barqaror usulda chaqirish
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
@@ -46,7 +46,6 @@ malla_nomlari = [
     "Tokzor", "To'qimachi", "Turopobod", "Turkiston", "Xo'jamazor", "Yangi bo'suz"
 ]
 
-# 5. Asosiy interfeys
 st.title("🏛 Mahijro AI: Zangiota tumani")
 
 tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
@@ -64,16 +63,13 @@ with tab1:
         if uploaded_file or muro_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
-                    content = [prompt]
+                    content = [f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."]
                     if muro_izoh: content.append(f"Topshiriq: {muro_izoh}")
                     
                     if uploaded_file:
                         if uploaded_file.type == "application/pdf":
                             pdf_reader = PdfReader(uploaded_file)
-                            text = ""
-                            for page in pdf_reader.pages:
-                                text += page.extract_text()
+                            text = "".join([page.extract_text() for page in pdf_reader.pages])
                             content.append(f"Hujjat matni: {text[:4000]}")
                         else:
                             content.append(Image.open(uploaded_file))
@@ -91,11 +87,10 @@ with tab1:
 
 with tab2:
     st.subheader("Mahallalar monitoringi")
-    # ValueError'ni oldini olish uchun (Jami 59 ta)
+    # Ro'yxat uzunligini avtomatik tenglashtirish (ValueError oldini oladi)
     df = pd.DataFrame({
         "№": range(1, len(malla_nomlari) + 1),
         "MFY nomi": malla_nomlari,
         "Holat": ["Yangi"] * len(malla_nomlari)
     })
     st.dataframe(df, use_container_width=True, hide_index=True)
-    
