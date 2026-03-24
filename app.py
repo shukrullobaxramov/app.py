@@ -26,7 +26,7 @@ if "logged_in" not in st.session_state:
 # 3. API Sozlash (404 xatosini bartaraf etish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    # Modelni barqaror usulda chaqirish
+    # Modelni barqaror usulda chaqirish (v1beta siz)
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
@@ -46,7 +46,7 @@ malla_nomlari = [
     "Tokzor", "To'qimachi", "Turopobod", "Turkiston", "Xo'jamazor", "Yangi bo'suz"
 ]
 
-st.title("🏛 Mahijro AI: Ishchi paneli")
+st.title("🏛 Mahijro AI: Zangiota tumani")
 
 tab1, tab2 = st.tabs(["✍️ Murojaat tahlili", "📊 MFY hisoboti"])
 
@@ -80,7 +80,7 @@ with tab1:
                     st.write(response.text)
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.") #
+                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.")
                     else:
                         st.error(f"Xatolik: {e}")
         else:
