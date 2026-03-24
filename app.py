@@ -5,10 +5,10 @@ from PIL import Image
 from PyPDF2 import PdfReader
 import pandas as pd
 
-# Sahifa sozlamalari
+# 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛", layout="wide")
 
-# Login tizimi
+# 2. Login tizimi
 if "logged_in" not in st.session_state:
     st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Tizimga kirish</h2>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -23,15 +23,16 @@ if "logged_in" not in st.session_state:
                 st.error("Login yoki parol xato!")
     st.stop()
 
-# API Sozlash (404 xatosini oldini olish uchun)
+# 3. API Sozlash (404 xatosini bartaraf etish uchun)
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    # Modelni barqaror usulda chaqirish
     model = genai.GenerativeModel('gemini-1.5-flash')
 else:
     st.error("API kalit topilmadi!")
     st.stop()
 
-# Alifbo bo'yicha mahallalar (Jami 59 ta)
+# 4. MFY ro'yxati (Alifbo bo'yicha - Jami 59 ta)
 malla_nomlari = [
     "Abdujalilbob", "Ahmad Yassaviy", "Alimbuva", "Amir Temur", "Asil", "Axilobod", 
     "Baliqchi", "Bodomzor", "Bog'ishamol", "Bog'zor", "Bo'ston", "Chinor", 
@@ -56,20 +57,21 @@ with tab1:
         uploaded_file = st.file_uploader("Murojaatni yuklang (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'])
         selected_mfy = st.selectbox("Mahallani tanlang:", malla_nomlari)
     with colB:
-        murojaat_izoh = st.text_area("Rezolyutsiya yoki qo'shimcha izoh:", height=100)
+        muro_izoh = st.text_area("Rezolyutsiya yoki izoh:", height=100)
     
     if st.button("📝 Javob xati loyihasini yaratish", use_container_width=True):
         if uploaded_file or muro_izoh:
             with st.spinner("AI tahlil qilmoqda..."):
                 try:
-                    content = [f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."]
-                    if murojaat_izoh: content.append(f"Izoh: {murojaat_izoh}")
+                    prompt = f"Siz Zangiota tumani {selected_mfy} MFY raisisiz. Rasmiy javob xati loyihasini tayyorlang."
+                    content = [prompt]
+                    if muro_izoh: content.append(f"Izoh: {muro_izoh}")
                     
                     if uploaded_file:
                         if uploaded_file.type == "application/pdf":
                             pdf_reader = PdfReader(uploaded_file)
                             text = "".join([page.extract_text() for page in pdf_reader.pages])
-                            content.append(f"Hujjat matni: {text[:4000]}")
+                            content.append(f"Hujjat matni: {text[:4000]}") # PDF matni qo'shildi
                         else:
                             content.append(Image.open(uploaded_file))
 
@@ -78,7 +80,7 @@ with tab1:
                     st.write(response.text)
                 except Exception as e:
                     if "429" in str(e):
-                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.")
+                        st.error("Limit tugagan. 1 daqiqa kutib qayta urining.") #
                     else:
                         st.error(f"Xatolik: {e}")
         else:
@@ -86,6 +88,7 @@ with tab1:
 
 with tab2:
     st.subheader("Mahallalar monitoringi")
+    # Ro'yxat uzunligini avtomatik tenglashtirish
     df = pd.DataFrame({
         "№": range(1, len(malla_nomlari) + 1),
         "MFY nomi": malla_nomlari,
