@@ -36,7 +36,7 @@ if "logged_in" not in st.session_state:
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
     # Muhim: Model nomi v1beta-siz chaqirilmoqda
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
 else:
     st.error("API kalit topilmadi! Streamlit Secrets bo'limiga GEMINI_API_KEY kiriting.")
     st.stop()
