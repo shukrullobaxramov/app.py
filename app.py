@@ -17,19 +17,19 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Zangiota tumanidagi 60 ta MFY ro'yxati
+# 2. Zangiota tumanidagi aynan siz bergan 60 ta MFY ro'yxati
 mfy_list = [
-    "Alimbuva", "Sortepa", "Erkin", "O'rtaovul", "Tiklanish", "Mustaqillik", 
-    "Bog'zor", "G'uliston", "Ittifoq", "Zangiota", "Navro'z", "Nazarbek",
-    "Birlik", "Vatan", "Do'stlik", "Yulduz", "Xonobod", "Ziyolilar",
-    "Ahillik", "G'alaba", "Keles", "Chig'atoy", "O'zbekiston", "Paxtakor",
-    "Mehnatoobod", "Nurobod", "Obod", "Farovon", "Gullar vodiysi", "Toshkent",
-    "Eshonguzar", "Istiqlol", "Bo'ston", "Yangi hayot", "Nurli yo'l", "Qahramon",
-    "Tutzor", "Mevazor", "Olmazor", "Sohibkor", "Humo", "Nasaf",
-    "Nurafshon", "Oydin", "Yangi obod", "Sharq", "G'ayrat", "Jasorat",
-    "Madaniyat", "Ma'rifat", "Ozodlik", "Bahor", "Chamanzozor", "Yashnobod",
-    "Bunyodkor", "Turkiston", "Iqbol", "Shodlik", "Tinchlik", "Obod mahalla"
-] # Ro'yxat tuman shtat jadvali asosida 60 taga to'ldirildi
+    "Abdujalilbob", "Alimbuva", "Amir Temur", "Asil", "Axilobod", "Ahmad Yassaviy",
+    "Baliqchi", "Bog'zor", "Bog'ishamol", "Bodomzor", "Bo'ston", "Gulbog'",
+    "Daligazar", "Dehqonobod", "Zarafshon", "Ilg'or", "Istiqlol", "Istiqlolning 5-yilligi",
+    "Katta chinor", "Keng kechik", "Qahramon", "Quyoshli", "Qurilish", "M.M.Xorazmiy",
+    "Madaniyat", "Mevazor", "Navbahor", "Navqiron", "Nazarbek", "Nayman",
+    "Namuna", "Nurafshon", "Nurobod", "Obod", "Obod to'qimachi", "Obod turmush",
+    "Olmazor", "Ramadon", "Saxovat", "Sortepa", "Tariq-teshar", "Tarnov",
+    "Tokzor", "To'qimachi", "Turkiston", "Turopobod", "O'ratepa", "O'rikzor",
+    "O'rta", "O'rtaovul", "Fayz", "Farobiy", "Harakat", "Xo'jamozor",
+    "Chinor", "Shodlik", "Erkin", "Eski qala", "Eshonguzar", "Yangi bo'zsuv"
+]
 
 # 3. Login tizimi
 if "logged_in" not in st.session_state:
@@ -74,7 +74,7 @@ if menu == "Javob xati yozish":
 
     with col_right:
         st.subheader("2. O'rganish ma'lumotlari")
-        # DALOLATNOMA QISMI
+        # DALOLATNOMA QISMI (Ixtiyoriy)
         organish_file = st.file_uploader("O'rganish dalolatnomasi (Ixtiyoriy)", type=['png', 'jpg', 'jpeg', 'pdf'], key="o_file")
         organish_matni = st.text_area("Qo'shimcha izoh yoki joyidagi holat (Ixtiyoriy):", 
                                      placeholder="Masalan: Murojaat joyiga borib o'rganildi...", height=110)
@@ -95,7 +95,7 @@ if menu == "Javob xati yozish":
                         pdf_reader = PdfReader(io.BytesIO(murojaat_file.read()))
                         input_data.append("".join([page.extract_text() for page in pdf_reader.pages]))
                     else:
-                        input_data.append(Image.open(murojaat_file))
+                        input_data.append(Image.open(muro_file := murojaat_file))
                     
                     if organish_file:
                         if organish_file.type == "application/pdf":
@@ -120,7 +120,6 @@ if menu == "Javob xati yozish":
 elif menu == "MFY Hisobot shakllari":
     st.title(f"📊 {selected_mfy} MFY: Hisobot va Tahlil")
     
-    # Namuna hisobot jadvali
     report_data = {
         "Ko'rsatkich": ["Kelib tushgan arizalar", "Tayyorlangan javoblar", "O'rganish bosqichida", "Rad etilgan"],
         "Soni": [24, 21, 2, 1]
