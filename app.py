@@ -4,20 +4,30 @@ import google.generativeai as genai
 from PIL import Image
 from PyPDF2 import PdfReader
 import io
-import pandas as pd
 
-# 1. Sahifa sozlamalari
-st.set_page_config(page_title="Mahijro AI | Zangiota 60 MFY", page_icon="🏛", layout="wide")
+# 1. Sahifa va Dizayn
+st.set_page_config(page_title="Mahijro AI | Markaziy Boshqaruv", page_icon="🏛", layout="wide")
 
-# Dizayn (CSS)
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    .stButton>button { width: 100%; border-radius: 8px; height: 3em; background-color: #004a99; color: white; font-weight: bold; }
+    .main { background-color: #f4f7f9; }
+    .stButton>button { width: 100%; border-radius: 6px; height: 3.5em; background-color: #0d47a1; color: white; font-weight: bold; }
+    .stSelectbox label { font-weight: bold; color: #0d47a1; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Zangiota tumanidagi aynan siz bergan 60 ta MFY ro'yxati
+# 2. Rahbarlik lavozimlari (7 ta asosiy bo'lim)
+positions = [
+    "1. Mahalla uyushmasi tuman bo'limi boshlig'i",
+    "2. Tuman Ichki ishlar bo'limi boshlig'i",
+    "3. 'Inson' ijtimoiy xizmatlar markazi direktori",
+    "4. Yoshlar ishlari agentligi tuman bo'limi boshlig'i",
+    "5. Soliq qo'mitasi tuman bo'limi boshlig'i",
+    "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
+    "7. Mahallabay ishlash va tadbirkorlikni rivojlantirish agentligi boshlig'i"
+]
+
+# 60 ta MFY ro'yxati (Siz bergan tartibda)
 mfy_list = [
     "Abdujalilbob", "Alimbuva", "Amir Temur", "Asil", "Axilobod", "Ahmad Yassaviy",
     "Baliqchi", "Bog'zor", "Bog'ishamol", "Bodomzor", "Bo'ston", "Gulbog'",
@@ -31,10 +41,11 @@ mfy_list = [
     "Chinor", "Shodlik", "Erkin", "Eski qala", "Eshonguzar", "Yangi bo'zsuv"
 ]
 
-# 3. Login tizimi
+# 3. Login mantiqi
 if "logged_in" not in st.session_state:
-    st.markdown("<h2 style='text-align: center;'>🏛 Mahijro AI: Zangiota tumani tizimiga kirish</h2>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    st.markdown("<h1 style='text-align: center; color: #0d47a1;'>🏛 MAHIJRO AI</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Zangiota tumani mas'ul rahbarlari uchun qaror qabul qilish tizimi</p>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         u = st.text_input("Login:")
         p = st.text_input("Parol:", type="password")
@@ -43,90 +54,73 @@ if "logged_in" not in st.session_state:
                 st.session_state["logged_in"] = True
                 st.rerun()
             else:
-                st.error("Login yoki parol xato!")
+                st.error("Kirish taqiqlandi!")
     st.stop()
 
-# 4. API Sozlamalari
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
-else:
-    st.error("API kalit topilmadi!")
-    st.stop()
+# 4. AI Sozlamasi
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-# 5. Sidebar - Navigatsiya
+# 5. Sidebar
+st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Coat_of_arms_of_Uzbekistan.svg/1200px-Coat_of_arms_of_Uzbekistan.svg.png", width=70)
 st.sidebar.title("Zangiota tumani")
-st.sidebar.subheader("Mahalla boshqaruvi")
+st.sidebar.info("Markaziy boshqaruv va tahlil tizimi")
 
-selected_mfy = st.sidebar.selectbox("Mahallani tanlang (60 ta):", mfy_list)
-menu = st.sidebar.radio("Bo'limni tanlang:", ["Javob xati yozish", "MFY Hisobot shakllari"])
+# 6. Asosiy Interfeys
+st.title("🏛 Rasmiy hujjatlar generatori")
+st.markdown("---")
 
-# --- BO'LIM 1: JAVOB XATI YOZISH ---
-if menu == "Javob xati yozish":
-    st.title(f"🏛 {selected_mfy} MFY: Javob xati generatori")
-    st.markdown("---")
+col_a, col_b = st.columns(2)
 
-    col_left, col_right = st.columns(2)
-    
-    with col_left:
-        st.subheader("1. Murojaatni yuklang")
-        murojaat_file = st.file_uploader("Fuqaro arizasi (PDF yoki Rasm)", type=['png', 'jpg', 'jpeg', 'pdf'], key="m_file")
+with col_a:
+    selected_pos = st.selectbox("Mas'ul rahbar (Lavozim):", positions)
+    selected_mfy = st.selectbox("Tegishli mahalla:", mfy_list)
+    murojaat_f = st.file_uploader("Fuqaro murojaati (PDF/Rasm):", type=['png', 'jpg', 'pdf'], key="m1")
 
-    with col_right:
-        st.subheader("2. O'rganish ma'lumotlari")
-        # DALOLATNOMA QISMI (Ixtiyoriy)
-        organish_file = st.file_uploader("O'rganish dalolatnomasi (Ixtiyoriy)", type=['png', 'jpg', 'jpeg', 'pdf'], key="o_file")
-        organish_matni = st.text_area("Qo'shimcha izoh yoki joyidagi holat (Ixtiyoriy):", 
-                                     placeholder="Masalan: Murojaat joyiga borib o'rganildi...", height=110)
+with col_b:
+    dalolatnoma_f = st.file_uploader("O'rganish dalolatnomasi (Ixtiyoriy):", type=['png', 'jpg', 'pdf'], key="d1")
+    ko_rsatma = st.text_area("Rahbar ko'rsatmasi yoki qo'shimcha ma'lumot:", 
+                            placeholder="Masalan: Qonun doirasida ijobiy hal etilsin yoki tushuntirish berilsin...", height=110)
 
-    if st.button("🚀 Javob xati loyihasini shakllantirish"):
-        if murojaat_file:
-            with st.spinner("Hujjatlar tahlil qilinmoqda..."):
-                try:
-                    prompt = f"""Siz Zangiota tumani {selected_mfy} MFY mutaxassisiz. 
-                    Yuklangan murojaat va o'rganish ma'lumotlarini tahlil qilib, rasmiy javob yozing.
-                    - Matn FAQAT LOTIN alifbosida bo'lsin.
-                    - MFY nomi: {selected_mfy} deb ko'rsatilsin.
-                    - Rasmiy ish yuritish standartlariga amal qiling.
-                    """
-                    input_data = [prompt]
-                    
-                    if murojaat_file.type == "application/pdf":
-                        pdf_reader = PdfReader(io.BytesIO(murojaat_file.read()))
-                        input_data.append("".join([page.extract_text() for page in pdf_reader.pages]))
+if st.button("🚀 RASMIY JAVOBNI SHAKLLANTIRISH"):
+    if murojaat_f:
+        with st.spinner("AI tahlil qilmoqda..."):
+            try:
+                # Promptni lavozimga qarab moslashtirish
+                prompt = f"""Siz {selected_pos}siz. 
+                Sizga {selected_mfy} mahallasidan murojaat kelgan. 
+                Vazifangiz: O'z sohangizdan kelib chiqib (masalan, agar Soliq bo'lsa - soliq qonunchiligi, 
+                agar 'Inson' markazi bo'lsa - ijtimoiy himoya qoidalari asosida) fuqaroga 
+                rasmiy, lotin alifbosida, savodli javob xati loyihasini tayyorlash.
+                Hujjatda lavozimingizni aniq ko'rsating. Til: O'zbek (lotin).
+                """
+                
+                content = [prompt]
+                
+                # Fayllarni o'qish
+                if murojaat_f.type == "application/pdf":
+                    content.append("MUROJAAT: " + "".join([p.extract_text() for p in PdfReader(io.BytesIO(murojaat_f.read())).pages]))
+                else:
+                    content.append(Image.open(murojaat_f))
+                
+                if dalolatnoma_f:
+                    if dalolatnoma_f.type == "application/pdf":
+                        content.append("DALOLATNOMA: " + "".join([p.extract_text() for p in PdfReader(io.BytesIO(dalolatnoma_f.read())).pages]))
                     else:
-                        input_data.append(Image.open(muro_file := murojaat_file))
-                    
-                    if organish_file:
-                        if organish_file.type == "application/pdf":
-                            pdf_reader_o = PdfReader(io.BytesIO(organish_file.read()))
-                            input_data.append("".join([page.extract_text() for page in pdf_reader_o.pages]))
-                        else:
-                            input_data.append(Image.open(organish_file))
-                            
-                    if organish_matni:
-                        input_data.append(f"IZOH: {organish_matni}")
+                        content.append(Image.open(dalolatnoma_f))
+                
+                if ko_rsatma:
+                    content.append(f"RAHBAR KO'RSATMASI: {ko_rsatma}")
 
-                    response = model.generate_content(input_data)
-                    st.success(f"✅ {selected_mfy} MFY uchun javob loyihasi tayyor!")
-                    st.markdown("---")
-                    st.write(response.text)
-                except Exception as e:
-                    st.error(f"Xatolik: {str(e)}")
-        else:
-            st.warning("Iltimos, avval murojaatni yuklang.")
-
-# --- BO'LIM 2: MFY HISOBOT SHAKLLARI ---
-elif menu == "MFY Hisobot shakllari":
-    st.title(f"📊 {selected_mfy} MFY: Hisobot va Tahlil")
-    
-    report_data = {
-        "Ko'rsatkich": ["Kelib tushgan arizalar", "Tayyorlangan javoblar", "O'rganish bosqichida", "Rad etilgan"],
-        "Soni": [24, 21, 2, 1]
-    }
-    st.table(pd.DataFrame(report_data))
-    
-    st.info(f"Hozirda {selected_mfy} MFY bo'yicha tizimda 24 ta hujjat qayd etilgan.")
+                response = model.generate_content(content)
+                st.success(f"✅ {selected_pos} uchun javob loyihasi tayyor!")
+                st.markdown("---")
+                st.write(response.text)
+                
+            except Exception as e:
+                st.error(f"Xatolik yuz berdi: {str(e)}")
+    else:
+        st.warning("Iltimos, avval murojaat faylini yuklang.")
 
 st.sidebar.markdown("---")
-st.sidebar.caption("© 2026 Mahijro AI - Zangiota tumani")
+st.sidebar.write("**Tizim nazorati:** 2026-yil, Zangiota.")
