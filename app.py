@@ -6,116 +6,107 @@ import io
 
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI | Zangiota", page_icon="🏛", layout="wide")
-# 2. API Sozlamasi (AVTOMATIK MODEL QIDIRUVCHI VARIANT)
+
+# Maxsus CSS dizayn
+st.markdown("""
+    <style>
+    .stButton>button { width: 100%; border-radius: 8px; background-color: #004a99; color: white; font-weight: bold; }
+    .stSelectbox { margin-bottom: 15px; }
+    h1 { color: #004a99; border-bottom: 2px solid #004a99; }
+    .doc-box { padding: 20px; border-radius: 10px; background-color: #f0f2f6; border-left: 5px solid #004a99; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 2. API Sozlamasi (Avtomatik model qidiruvchi)
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        
-        # Mavjud modellarni tekshirish va ishlaydiganini topish
         available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
-        # Eng yaxshi modellarni ketma-ketlikda qidiramiz
         target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']
-        
-        selected_model_name = None
-        for target in target_models:
-            if target in available_models:
-                selected_model_name = target
-                break
-        
-        if not selected_model_name:
-            # Agar yuqoridagilar topilmasa, ro'yxatdagi birinchi modelni olamiz
-            selected_model_name = available_models[0] if available_models else 'gemini-pro'
-
+        selected_model_name = next((t for t in target_models if t in available_models), available_models[0])
         model = genai.GenerativeModel(selected_model_name)
-        # st.info(f"Ishlatilayotgan model: {selected_model_name}") # Bu qatorni test uchun ochishingiz mumkin
-        
     except Exception as e:
-        st.error(f"API ulanishda xato: {e}")
+        st.error(f"⚠️ API ulanishda xato: {e}")
         st.stop()
-else:
-    st.error("Secrets bo'limida API kalit topilmadi!")
-    st.stop()
-# 3. Ma'lumotlar bazasi (7 ta Rahbar va 60 ta MFY)
+
+# 3. Ma'lumotlar
+doc_types = ["Javob xati", "Ma'lumotnoma", "Yig'ilish bayoni", "Dalolatnoma", "Bildirishnoma"]
 positions = [
     "1. Mahalla uyushmasi tuman bo'limi boshlig'i",
     "2. Tuman Ichki ishlar bo'limi boshlig'i",
-    "3. 'Inson' ijtimoiy xizmatlar markazi direktori",
-    "4. Yoshlar ishlari agentligi tuman bo'limi boshlig'i",
-    "5. Soliq qo'mitasi tuman bo'limi boshlig'i",
-    "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
-    "7. Mahallabay ishlash va tadbirkorlikni rivojlantirish agentligi boshlig'i"
+    "3. 'Inson' markazi direktori",
+    "4. Yoshlar ishlari agentligi boshlig'i",
+    "5. Soliq qo'mitasi bo'limi boshlig'i",
+    "6. Oila va xotin-qizlar bo'limi boshlig'i",
+    "7. Mahallabay ishlash agentligi boshlig'i"
 ]
+mfy_list = sorted(["Abdujalilbob", "Alimbuva", "Amir Temur", "Asil", "Axilobod", "Ahmad Yassaviy", "Baliqchi", "Bog'zor", "Bog'ishamol", "Bodomzor", "Bo'ston", "Gulbog'", "Daligazar", "Dehqonobod", "Zarafshon", "Ilg'or", "Istiqlol", "Katta chinor", "Keng kechik", "Qahramon", "Quyoshli", "Qurilish", "M.M.Xorazmiy", "Madaniyat", "Mevazor", "Navbahor", "Navqiron", "Nazarbek", "Nayman", "Namuna", "Nurafshon", "Nurobod", "Obod", "Olmazor", "Ramadon", "Saxovat", "Sortepa", "Tariq-teshar", "Tarnov", "Tokzor", "To'qimachi", "Turkiston", "Turopobod", "O'ratepa", "O'rikzor", "O'rta", "O'rtaovul", "Fayz", "Farobiy", "Harakat", "Xo'jamozor", "Chinor", "Shodlik", "Erkin", "Eski qala", "Eshonguzar", "Yangi bo'zsuv"])
 
-mfy_list = [
-    "Abdujalilbob", "Alimbuva", "Amir Temur", "Asil", "Axilobod", "Ahmad Yassaviy",
-    "Baliqchi", "Bog'zor", "Bog'ishamol", "Bodomzor", "Bo'ston", "Gulbog'",
-    "Daligazar", "Dehqonobod", "Zarafshon", "Ilg'or", "Istiqlol", "Istiqlolning 5-yilligi",
-    "Katta chinor", "Keng kechik", "Qahramon", "Quyoshli", "Qurilish", "M.M.Xorazmiy",
-    "Madaniyat", "Mevazor", "Navbahor", "Navqiron", "Nazarbek", "Nayman",
-    "Namuna", "Nurafshon", "Nurobod", "Obod", "Obod to'qimachi", "Obod turmush",
-    "Olmazor", "Ramadon", "Saxovat", "Sortepa", "Tariq-teshar", "Tarnov",
-    "Tokzor", "To'qimachi", "Turkiston", "Turopobod", "O'ratepa", "O'rikzor",
-    "O'rta", "O'rtaovul", "Fayz", "Farobiy", "Harakat", "Xo'jamozor",
-    "Chinor", "Shodlik", "Erkin", "Eski qala", "Eshonguzar", "Yangi bo'zsuv"
-]
+# 4. Yon Panel (Statistika va Rahbar)
+with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/7/77/Emblem_of_Uzbekistan.png", width=80)
+    st.title("Boshqaruv")
+    rahbar = st.selectbox("👤 Mas'ul rahbar:", positions)
+    
+    st.markdown("---")
+    st.subheader("📊 Statistika uchun")
+    mfy_stat = st.selectbox("🏘 Mahalla (MFY):", mfy_list)
+    st.caption(f"Hozirda {mfy_stat} MFY bo'yicha ish yuritilmoqda.")
 
-# 4. Interfeys dizayni
-st.title("🏛 Mahijro AI: Markaziy Boshqaruv Tizimi")
-st.write("Zangiota tumani mas'ul rahbarlari uchun rasmiy hujjatlar generatori.")
-st.markdown("---")
+# 5. Asosiy Oyna
+st.title("🏛 Mahijro AI: Zangiota tumani")
+st.write("Hujjat turini tanlang va faylni yuklang.")
 
-col1, col2 = st.columns(2)
+col1, col2 = st.columns([1, 1])
 
 with col1:
-    selected_rahbar = st.selectbox("Mas'ul rahbar (Lavozim):", positions)
-    selected_mfy = st.selectbox("Tegishli mahalla (MFY):", mfy_list)
-    murojaat_file = st.file_uploader("Fuqaro murojaati (PDF yoki Rasm):", type=['png', 'jpg', 'jpeg', 'pdf'])
+    hujjat_turi = st.radio("📄 Hujjat turi:", doc_types, horizontal=True)
+    murojaat = st.file_uploader("📥 Asosiy faylni yuklang (Rasm/PDF):", type=['png', 'jpg', 'jpeg', 'pdf'])
 
 with col2:
-    dalolatnoma_file = st.file_uploader("O'rganish dalolatnomasi (Ixtiyoriy):", type=['png', 'jpg', 'jpeg', 'pdf'])
-    izoh = st.text_area("Qo'shimcha ko'rsatma yoki izoh:", placeholder="Masalan: Arizani qanoatlantirish haqida...", height=110)
+    izoh = st.text_area("✍️ Qo'shimcha ko'rsatma (Ixtiyoriy):", 
+                        placeholder="Masalan: Arizani rad etish sababini tushuntiring...", height=150)
 
-# 5. Generatsiya jarayoni
-if st.button("🚀 RASMIY JAVOBNI SHAKLLANTIRISH"):
-    if murojaat_file:
-        with st.spinner("AI hujjatlarni tahlil qilmoqda, iltimos kuting..."):
+st.markdown("---")
+
+# 6. Generatsiya
+if st.button(f"🚀 {hujjat_turi.upper()} TAYYORLASH"):
+    if murojaat:
+        with st.spinner("⏳ AI hujjatni shakllantirmoqda..."):
             try:
-                # Prompt mantiqi
-                prompt = f"Siz {selected_rahbar}siz. {selected_mfy} mahallasidan kelgan murojaatni o'rganib chiqib, rasmiy, qonuniy va o'ta savodli javob xati yozing. Matn FAQAT LOTIN alifbosida bo'lsin."
+                prompt = f"""Siz {rahbar}siz. Yuklangan fayl asosida professional '{hujjat_turi}' tayyorlang. 
+                Hujjat {mfy_stat} mahallasiga tegishli. 
+                Talablar:
+                1. Faqat lotin alifbosida yozing.
+                2. Rasmiy ish yuritish uslubiga rioya qiling.
+                3. O'zbekiston Respublikasi qonunchiligiga mos bo'lsin.
+                4. Agar bu javob xati bo'lsa, fuqaroga tushunarli va aniq javob bering."""
+                
                 content = [prompt]
                 
-                # Murojaatni tahlil qilish
-                if murojaat_file.type == "application/pdf":
-                    reader = PdfReader(io.BytesIO(murojaat_file.read()))
-                    pdf_text = "".join([page.extract_text() for page in reader.pages])
-                    content.append(f"Murojaat matni: {pdf_text}")
+                if murojaat.type == "application/pdf":
+                    reader = PdfReader(io.BytesIO(murojaat.read()))
+                    pdf_text = "".join([p.extract_text() for p in reader.pages])
+                    content.append(f"Hujjat matni: {pdf_text}")
                 else:
-                    content.append(Image.open(murojaat_file))
-                
-                # Dalolatnomani qo'shish
-                if dalolatnoma_file:
-                    if dalolatnoma_file.type == "application/pdf":
-                        reader_d = PdfReader(io.BytesIO(dalolatnoma_file.read()))
-                        content.append("Dalolatnoma matni: " + "".join([p.extract_text() for p in reader_d.pages]))
-                    else:
-                        content.append(Image.open(dalolatnoma_file))
+                    content.append(Image.open(murojaat))
                 
                 if izoh:
                     content.append(f"Qo'shimcha ko'rsatma: {izoh}")
 
-                # AI dan javob olish
-                response = model.generate_content(content)
+                res = model.generate_content(content)
                 
-                st.success("✅ Rasmiy javob loyihasi tayyor!")
-                st.markdown("---")
-                st.markdown("### 📄 Tayyorlangan hujjat matni:")
-                st.write(response.text)
+                st.success(f"✅ {hujjat_turi} loyihasi tayyor!")
+                st.markdown(f"### 📑 {hujjat_turi} matni:")
+                st.info(res.text)
+                
+                # Yuklab olish imkoniyati
+                st.download_button("📥 Matnni nusxalash (.txt)", res.text, file_name=f"{hujjat_turi.replace(' ', '_')}.txt")
                 
             except Exception as e:
-                st.error(f"Xatolik yuz berdi: {str(e)}")
+                st.error(f"❌ Xatolik: {e}")
     else:
-        st.warning("Iltimos, avval murojaat faylini yuklang.")
+        st.warning("⚠️ Iltimos, avval faylni yuklang.")
 
-st.markdown("---")
-st.caption("© 2026 Mahijro AI - Zangiota tumani tahliliy tizimi")
+st.sidebar.markdown("---")
+st.sidebar.caption("© 2026 Zangiota tumani Mahijro AI")
