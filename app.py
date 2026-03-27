@@ -26,6 +26,7 @@ mfy_list = ["Abdujalilbob", "Alimbuva", "Amir Temur", "Asil", "Axilobod", "Ahmad
 st.title("🏛 Mahijro AI: Zangiota tumani")
 
 rahbar = st.selectbox("Mas'ul rahbar:", positions)
+mfy = st.selectbox("Mahalla:", mfy_list) # Xatolik aynan shu yerda bo'lgan
 murojaat = st.file_uploader("Murojaatni yuklang:", type=['png', 'jpg', 'pdf'])
 dalolatnoma = st.file_uploader("Dalolatnoma (Ixtiyoriy):", type=['png', 'jpg', 'pdf'])
 
