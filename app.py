@@ -8,52 +8,58 @@ import pandas as pd
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahalla Ijro | Zangiota", page_icon="🏛", layout="wide")
 
-# Maxsus dizayn
-st.markdown("""
-    <style>
-    .stApp { background-color: #fdfdfd; }
-    [data-testid="stSidebar"] { background-color: #e2efda; }
-    .stButton>button { width: 100%; border-radius: 5px; background-color: #70ad47; color: white; border: none; font-weight: bold; }
-    h1, h2, h3 { color: #385723; }
-    </style>
-    """, unsafe_allow_html=True)
-# 2. API Sozlamasi (AVTOMATIK MODEL QIDIRUVCHI VARIANT)
+# --- LOGIN TIZIMI ---
+def check_password():
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
+
+    if st.session_state["password_correct"]:
+        return True
+
+    # Kirish oynasi dizayni
+    st.markdown("<h1 style='text-align: center; color: #385723;'>🏛 Mahalla Ijro Tizimi</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center;'>Tizimga kirish uchun login va parolni kiriting</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        username = st.text_input("Login")
+        password = st.text_input("Parol", type="password")
+        if st.button("Kirish"):
+            # Secrets-dagi [credentials] bo'limidan tekshiramiz
+            creds = st.secrets.get("credentials", {})
+            if username in creds and str(creds[username]) == password:
+                st.session_state["password_correct"] = True
+                st.rerun()
+            else:
+                st.error("❌ Login yoki parol noto'g'ri!")
+    return False
+
+if not check_password():
+    st.stop()
+
+# --- ASOSIY DASTUR BOSHLANADI ---
+# API Sozlamasi
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        
-        # Mavjud modellarni tekshirish va ishlaydiganini topish
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        
-        # Eng yaxshi modellarni ketma-ketlikda qidiramiz
-        target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']
-        
-        selected_model_name = None
-        for target in target_models:
-            if target in available_models:
-                selected_model_name = target
-                break
-        
-        if not selected_model_name:
-            # Agar yuqoridagilar topilmasa, ro'yxatdagi birinchi modelni olamiz
-            selected_model_name = available_models[0] if available_models else 'gemini-pro'
-
-        model = genai.GenerativeModel(selected_model_name)
-        # st.info(f"Ishlatilayotgan model: {selected_model_name}") # Bu qatorni test uchun ochishingiz mumkin
-        
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            model.generate_content("test") 
+        except:
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
     except Exception as e:
         st.error(f"API ulanishda xato: {e}")
-        st.stop()
-else:
-    st.error("Secrets bo'limida API kalit topilmadi!")
-    st.stop()
-# 3. Sidebar Menyu
+
+# Sidebar Menyu
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/7/77/Emblem_of_Uzbekistan.png", width=80)
     st.markdown("### 📋 МЕНЮ")
-    menu = st.radio("", ["Javob xati yozish", "Muammolar tahlili (Hisobot)"], label_visibility="collapsed")
+    menu = st.radio("", ["Javob xati yozish", "Muammolar tahlili"], label_visibility="collapsed")
+    if st.button("Chiqish"):
+        st.session_state["password_correct"] = False
+        st.rerun()
 
-# 4. Ma'lumotlar
+# Ma'lumotlar
 positions = [
     "1. Mahalla uyushmasi tuman bo'limi boshlig'i",
     "2. Tuman Ichki ishlar bo'limi boshlig'i",
@@ -61,52 +67,44 @@ positions = [
     "4. Yoshlar ishlari agentligi tuman bo'limi boshlig'i",
     "5. Soliq qo'mitasi tuman bo'limi boshlig'i",
     "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
-    "7. Kambag‘allikni qisqartirish va bandlik bo‘limi"
+    "7. Mahallabay ishlash agentligi boshlig'i"
 ]
 
-# --- MENYU: JAVOB XATI YOZISH ---
 if menu == "Javob xati yozish":
-    st.title("🏛 МАХАЛЛА ИЖРО Zangiota tumani")
-    st.write("📄 Hujjat turini tanlang va asosiy faylni yuklang.")
-    
-    hujjat_turi = st.radio("", ["Javob xati", "Ma'lumotnoma", "Yig'ilish bayoni", "Dalolatnoma", "Bildirishnoma"], horizontal=True)
-    murojaat = st.file_uploader("📥 Asosiy faylni yuklang (PDF yoki Rasm):", type=['png', 'jpg', 'jpeg', 'pdf'])
+    st.title("🏛 МАХАЛЛА ИЖРО Zangiota")
+    hujjat_turi = st.radio("📄 Hujjat turi:", ["Javob xati", "Ma'lumotnoma", "Yig'ilish bayoni", "Dalolatnoma"], horizontal=True)
+    murojaat = st.file_uploader("📥 Asosiy faylni yuklang:", type=['png', 'jpg', 'jpeg', 'pdf'])
 
     if murojaat:
-        st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
-            rahbar = st.selectbox("👤 Mas'ul rahbarn tanlang:", positions)
-            ilova = st.file_uploader("📎 Ilova (ixtiyoriy):", type=['png', 'jpg', 'jpeg', 'pdf'])
+            rahbar = st.selectbox("👤 Mas'ul rahbar:", positions)
         with col2:
-            izoh = st.text_area("✍️ Qo'shimcha ko'rsatma:", placeholder="Masalan: Arizani qanoatlantirish haqida...", height=120)
+            izoh = st.text_area("✍️ Izoh:", placeholder="Qisqa ko'rsatma...", height=100)
 
-        if st.button("🚀 HUJJATNI TAYYORLASH"):
-            with st.spinner("⏳ AI tahlil qilmoqda..."):
+        if st.button("🚀 TAYYORLASH"):
+            with st.spinner("⏳ Tayyorlanmoqda..."):
                 try:
-                    prompt = f"Siz {rahbar}siz. Yuklangan hujjat asosida professional '{hujjat_turi}' tayyorlang. Lotin alifbosida yozing. MFY nomini avtomatik qo'shmang."
+                    prompt = f"Siz {rahbar}siz. '{hujjat_turi}' tayyorlang. Lotin alifbosida bo'lsin. Mahalla nomini o'zingizdan qo'shmang."
                     content = [prompt]
                     if murojaat.type == "application/pdf":
                         reader = PdfReader(io.BytesIO(murojaat.read()))
-                        content.append("Hujjat matni: " + "".join([p.extract_text() for p in reader.pages]))
+                        content.append("Matn: " + "".join([p.extract_text() for p in reader.pages]))
                     else:
                         content.append(Image.open(murojaat))
-                    if izoh: content.append(f"Izoh: {izoh}")
+                    if izoh: content.append(f"Qo'shimcha: {izoh}")
                     
                     res = model.generate_content(content)
-                    st.success("✅ Tayyorlandi!")
+                    st.success("Tayyor!")
                     st.info(res.text)
                 except Exception as e:
-                    st.error(f"Xatolik yuz berdi: {e}")
+                    st.error(f"Xato: {e}")
 
-# --- MENYU: HISOBOT ---
-elif menu == "Muammolar tahlili (Hisobot)":
-    st.title("📊 Murojaatlardagi muammolar tahlili")
-    stats_data = {
-        "Muammo yo'nalishi": ["Gaz", "Elektr", "Suv", "Yo'l", "Yordam", "Bandlik", "Boshqa"],
-        "Kelib tushgan": [45, 38, 22, 56, 89, 41, 15],
-        "Hal etilgan": [30, 25, 15, 20, 75, 30, 10]
-    }
-    df = pd.DataFrame(stats_data)
+elif menu == "Muammolar tahlili":
+    st.title("📊 Yo'nalishlar tahlili")
+    df = pd.DataFrame({
+        "Yo'nalish": ["Gaz", "Elektr", "Suv", "Yo'l", "Yordam"],
+        "Soni": [45, 38, 22, 56, 89]
+    })
     st.table(df)
-    st.bar_chart(df.set_index("Muammo yo'nalishi")["Kelib tushgan"])
+    st.bar_chart(df.set_index("Yo'nalish"))
