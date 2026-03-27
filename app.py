@@ -18,14 +18,36 @@ st.markdown("""
     .stRadio > div { gap: 20px; }
     </style>
     """, unsafe_allow_html=True)
-
-# 2. API Sozlamasi
+# 2. API Sozlamasi (AVTOMATIK MODEL QIDIRUVCHI VARIANT)
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel('gemini-1.5-flash')
-else:
-    st.error("API Key topilmadi!")
+    try:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        
+        # Mavjud modellarni tekshirish va ishlaydiganini topish
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        # Eng yaxshi modellarni ketma-ketlikda qidiramiz
+        target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']
+        
+        selected_model_name = None
+        for target in target_models:
+            if target in available_models:
+                selected_model_name = target
+                break
+        
+        if not selected_model_name:
+            # Agar yuqoridagilar topilmasa, ro'yxatdagi birinchi modelni olamiz
+            selected_model_name = available_models[0] if available_models else 'gemini-pro'
 
+        model = genai.GenerativeModel(selected_model_name)
+        # st.info(f"Ishlatilayotgan model: {selected_model_name}") # Bu qatorni test uchun ochishingiz mumkin
+        
+    except Exception as e:
+        st.error(f"API ulanishda xato: {e}")
+        st.stop()
+else:
+    st.error("Secrets bo'limida API kalit topilmadi!")
+    st.stop()
 # 3. Sidebar (Faqat Menyu)
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/7/77/Emblem_of_Uzbekistan.png", width=80)
