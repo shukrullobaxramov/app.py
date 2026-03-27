@@ -7,7 +7,7 @@ import io
 st.set_page_config(page_title="Mahijro AI", page_icon="🏛")
 
 # ✅ API KEY (hozircha to‘g‘ridan qo‘y)
-genai.configure(api_key="SENING_API_KEY")
+genai.configure(api_key="SENING_YANGI_API_KEY")
 
 # ✅ TO‘G‘RI MODEL
 model = genai.GenerativeModel("gemini-1.5-flash-latest")
