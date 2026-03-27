@@ -6,21 +6,23 @@ import io
 
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI | Zangiota", page_icon="🏛", layout="wide")
-# 2. API Sozlamasi (Eng xavfsiz va universal variant)
+# 2. API Sozlamasi (Xatoni avtomatik tuzatuvchi variant)
 if "GEMINI_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+    
+    # Tizim qaysi formatni yoqtirishini aniqlaymiz:
     try:
-        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        
-        # 404 xatosini chetlab o'tish uchun modelni aniq ko'rsatamiz
-        # Agar 'gemini-1.5-flash' xato bersa, tizim avtomatik boshqa variantni ko'radi
-        model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
-        
-    except Exception as e:
-        # Agar models/ bilan ham ishlamasa, usiz sinab ko'ramiz
+        # 1-urinish: Prefikssiz (Eng ko'p ishlaydigan variant)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Test qilish uchun kichik so'rov yuboramiz
+        model.generate_content("test") 
+    except Exception:
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-        except:
-            st.error(f"API ulanishda xatolik: {e}")
+            # 2-urinish: Prefiks bilan
+            model = genai.GenerativeModel('models/gemini-1.5-flash')
+        except Exception as e:
+            st.error(f"Modelni yuklashda xatolik: {e}")
+            st.stop()
 else:
     st.error("Secrets bo'limida API kalit topilmadi!")
     st.stop()
