@@ -81,13 +81,13 @@ with st.sidebar:
 
 # Mas'ul rahbarlar ro'yxati (Lotincha)
 positions = [
-    "1. Mahalla uyushmasi tuman bo'limi boshlig'i",
+    "1. Mahallalar uyushmasi tuman bo'limi boshlig'i",
     "2. Tuman Ichki ishlar bo'limi boshlig'i",
     "3. 'Inson' ijtimoiy xizmatlar markazi direktori",
     "4. Yoshlar ishlari agentligi tuman bo'limi boshlig'i",
     "5. Soliq qo'mitasi tuman bo'limi boshlig'i",
     "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
-    "7. Mahallabay ishlash agentligi boshlig'i"
+    "7. Kambag‘allikni qisqartirish va bandlik bo‘limi boshlig'i"
 ]
 
 if menu == "Javob xati yozish":
