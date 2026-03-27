@@ -50,7 +50,7 @@ positions = [
     "4. Yoshlar ishlari agentligi tuman bo'limi boshlig'i",
     "5. Soliq qo'mitasi tuman bo'limi boshlig'i",
     "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
-    "7. Mahallabay ishlash agentligi boshlig'i"
+    "7. Kambag‘allikni qisqartirish va bandlik bo‘limi"
 ]
 
 # --- MENYU: JAVOB XATI YOZISH ---
