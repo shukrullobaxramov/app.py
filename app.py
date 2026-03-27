@@ -69,3 +69,51 @@ positions = [
     "6. Oila va xotin-qizlar qo'mitasi tuman bo'limi boshlig'i",
     "7. Mahallabay ishlash agentligi boshlig'i"
 ]
+
+if menu == "Javob xati yozish":
+    st.title("🏛 MAHALLA IJRO | Zangiota")
+    st.subheader("Asosiy oyna")
+    
+    hujjat_turi = st.radio("📄 Hujjat turi:", ["Javob xati", "Ma'lumotnoma", "Yig'ilish bayoni", "Dalolatnoma"], horizontal=True)
+    murojaat = st.file_uploader("📥 Asosiy faylni yuklang (PDF yoki Rasm):", type=['png', 'jpg', 'jpeg', 'pdf'])
+
+    if murojaat:
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            rahbar = st.selectbox("👤 Mas'ul rahbarn tanlang:", positions)
+            ilova = st.file_uploader("📎 Ilova (ixtiyoriy):", type=['png', 'jpg', 'jpeg', 'pdf'])
+        with col2:
+            izoh = st.text_area("✍️ Qo'shimcha ko'rsatma:", placeholder="Masalan: Arizani qanoatlantirish haqida...", height=120)
+
+        if st.button("🚀 HUJJATNI TAYYORLASH"):
+            with st.spinner("⏳ AI tahlil qilmoqda..."):
+                try:
+                    prompt = f"Siz {rahbar}siz. '{hujjat_turi}' tayyorlang. Faqat lotin alifbosida, rasmiy uslubda bo'lsin. Mahalla nomini o'zingizdan qo'shmang."
+                    content = [prompt]
+                    if murojaat.type == "application/pdf":
+                        reader = PdfReader(io.BytesIO(muro_read := murojaat.read()))
+                        content.append("Matn: " + "".join([p.extract_text() for p in reader.pages]))
+                    else:
+                        content.append(Image.open(murojaat))
+                    if izoh: content.append(f"Ko'rsatma: {izoh}")
+                    
+                    res = model.generate_content(content)
+                    st.success("✅ Loyiha tayyorlandi!")
+                    st.markdown("### 📄 Hujjat matni:")
+                    st.info(res.text)
+                    st.download_button("📥 Matnni yuklab olish (.txt)", res.text, file_name=f"{hujjat_turi}.txt")
+                except Exception as e:
+                    st.error(f"Xatolik: {e}")
+
+elif menu == "Muammolar tahlili":
+    st.title("📊 Yo'nalishlar bo'yicha tahlil")
+    st.write("Murojaatlardagi asosiy muammolar statistikasi")
+    
+    stats_data = {
+        "Muammo yo'nalishi": ["Tabiiy gaz", "Elektr energiyasi", "Ichimlik suvi", "Yo'l va infratuzilma", "Moddiy yordam", "Bandlik", "Boshqa"],
+        "Soni": [45, 38, 22, 56, 89, 41, 15]
+    }
+    df = pd.DataFrame(stats_data)
+    st.table(df)
+    st.bar_chart(df.set_index("Muammo yo'nalishi"))
