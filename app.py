@@ -10,7 +10,7 @@ st.set_page_config(page_title="Mahijro AI", page_icon="🏛")
 import google.generativeai as genai
 
 # API kalitni sozlash
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+genai.configure(api_key=st.secrets["AIzaSyCTUiZAp0HQolRxW4CQ2b1ghFTduU4QGVE"])
 
 # Modelni yuklash (XATOSIZ VERSIYA)
 try:
