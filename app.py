@@ -6,23 +6,33 @@ import io
 
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI | Zangiota", page_icon="🏛", layout="wide")
-# 2. API Sozlamasi (Xatoni avtomatik tuzatuvchi variant)
+# 2. API Sozlamasi (AVTOMATIK MODEL QIDIRUVCHI VARIANT)
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    
-    # Tizim qaysi formatni yoqtirishini aniqlaymiz:
     try:
-        # 1-urinish: Prefikssiz (Eng ko'p ishlaydigan variant)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        # Test qilish uchun kichik so'rov yuboramiz
-        model.generate_content("test") 
-    except Exception:
-        try:
-            # 2-urinish: Prefiks bilan
-            model = genai.GenerativeModel('models/gemini-1.5-flash')
-        except Exception as e:
-            st.error(f"Modelni yuklashda xatolik: {e}")
-            st.stop()
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        
+        # Mavjud modellarni tekshirish va ishlaydiganini topish
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        
+        # Eng yaxshi modellarni ketma-ketlikda qidiramiz
+        target_models = ['models/gemini-1.5-flash', 'models/gemini-1.5-pro', 'models/gemini-pro']
+        
+        selected_model_name = None
+        for target in target_models:
+            if target in available_models:
+                selected_model_name = target
+                break
+        
+        if not selected_model_name:
+            # Agar yuqoridagilar topilmasa, ro'yxatdagi birinchi modelni olamiz
+            selected_model_name = available_models[0] if available_models else 'gemini-pro'
+
+        model = genai.GenerativeModel(selected_model_name)
+        # st.info(f"Ishlatilayotgan model: {selected_model_name}") # Bu qatorni test uchun ochishingiz mumkin
+        
+    except Exception as e:
+        st.error(f"API ulanishda xato: {e}")
+        st.stop()
 else:
     st.error("Secrets bo'limida API kalit topilmadi!")
     st.stop()
