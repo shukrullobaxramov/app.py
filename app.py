@@ -6,19 +6,24 @@ import io
 
 # 1. Sahifa sozlamalari
 st.set_page_config(page_title="Mahijro AI | Zangiota", page_icon="🏛", layout="wide")
-
-# 2. API Sozlamasi (Xatosiz va universal format)
+# 2. API Sozlamasi (Eng xavfsiz va universal variant)
 if "GEMINI_API_KEY" in st.secrets:
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-        # Model nomi prefikssiz, eng barqaror versiya
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        # 404 xatosini chetlab o'tish uchun modelni aniq ko'rsatamiz
+        # Agar 'gemini-1.5-flash' xato bersa, tizim avtomatik boshqa variantni ko'radi
+        model = genai.GenerativeModel(model_name='models/gemini-1.5-flash')
+        
     except Exception as e:
-        st.error(f"API ulanishda texnik xatolik: {e}")
+        # Agar models/ bilan ham ishlamasa, usiz sinab ko'ramiz
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+        except:
+            st.error(f"API ulanishda xatolik: {e}")
 else:
-    st.error("Streamlit Secrets bo'limida 'GEMINI_API_KEY' topilmadi!")
+    st.error("Secrets bo'limida API kalit topilmadi!")
     st.stop()
-
 # 3. Ma'lumotlar bazasi (7 ta Rahbar va 60 ta MFY)
 positions = [
     "1. Mahalla uyushmasi tuman bo'limi boshlig'i",
